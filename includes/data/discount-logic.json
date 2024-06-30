@@ -1,0 +1,20 @@
+{
+    "type_x+y": [
+        {
+            "quantity_required": 3,
+            "free_quantity": 1,
+            "free_item": "lowest_price",
+            "condition": {
+                "registered_user": false
+            }
+        }
+    ],
+    "type_percentage": [
+        {
+            "percentage": 10,
+            "condition": {
+                "registered_user": true
+            }
+        }
+    ]
+}

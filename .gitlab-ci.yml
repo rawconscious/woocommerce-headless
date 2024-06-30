@@ -1,0 +1,69 @@
+stages:
+  - build
+  - deploy
+
+default: 
+  before_script:
+    - 'command -v ssh-agent >/dev/null || ( apt-get update -y && apt-get install openssh-client -y )'
+    - eval $(ssh-agent -s)
+    - chmod 400 $DO_BE_BLR_SSH_KEY
+    - ssh-add $DO_BE_BLR_SSH_KEY
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan $DO_BE_BLR_IP >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+
+workflow:
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'dev'
+      when: always
+    - if: $CI_COMMIT_BRANCH == 'master' || $CI_COMMIT_BRANCH == 'main'
+      when: always
+    # if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == 'dev'
+    #  when: always
+    # if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == 'master' || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == 'main'
+    # when: always
+    - when: never
+
+build for development:
+  stage: build
+  rules:
+    # if: $CI_COMMIT_BRANCH == 'dev'
+    # if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == 'dev'
+    - when: never  
+  environment: development
+  script:
+    - echo "Build script not configured for production" 
+
+build for production:
+  stage: build
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'master' || $CI_COMMIT_BRANCH == 'main'
+    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == 'master' || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == 'main'
+    - when: never  
+  environment: production
+  script:
+    - echo "build script not configured for production"
+
+deploy to development:
+  stage: deploy
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'dev'
+    - when: never  
+  environment: development
+  script:
+    - echo "Running deploy script for development environment..."
+    - apt-get update -y
+    - apt-get -y install rsync
+    - ssh $DO_BE_BLR_CICD_USER@$DO_BE_BLR_IP "cd $DO_BE_BLR_DEV_DIR/wp-content/plugins/rc-woocommerce-headless/;bash ~/scripts/clean.sh;"
+    - rsync -ravztO --delete --exclude='.git*' . $DO_BE_BLR_CICD_USER@$DO_BE_BLR_IP:$DO_BE_BLR_DEV_DIR/wp-content/plugins/rc-woocommerce-headless
+
+deploy to production:
+  stage: deploy
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'master' || $CI_COMMIT_BRANCH == 'main'
+    - when: never  
+  environment: production
+  script:
+    - echo "Deploy script not configured for production"
+    
